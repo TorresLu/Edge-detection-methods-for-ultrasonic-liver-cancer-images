@@ -1,15 +1,13 @@
-%区域生长算法主函数，用于调用regiongrowing.m函数实现图像分割，并显示分割结果
-%————————————————————————————————————————
-%调用load_nii函数载入nii格式的超声医学图像，普通图像载入用imread函数
-img=load_nii('H:\毕业设计\肝脏肿瘤数据\TrainingSet\OX-03\Data\003.nii');
+%此函数为主函数，用于调用phasecong2.m文件和nonmaxsup.m实现分别相位一致性处理和非极大值抑制处理，并可显示图像
+%————————————————————————————————————
+%%调用load_nii函数载入nii格式的超声医学图像，普通图像载入用imread函数
+img=load_nii('E:\大学\document\successful\successful\示例图像\待处理图像\001.nii');
 img=img.img;
 img=img(150:350,130:300);
-figure,imshow(img,[]);
-
+imshow(img,[]),title('原始图像');
 %灰度直方图均衡化处理
 [M,N]=size(img);
 NumPixel = zeros(1,256);%统计各灰度数目，共256个灰度级  
-
 for i = 1:M  
     for j = 1:N  
         NumPixel(img(i,j) + 1) = NumPixel(img(i,j) + 1) + 1;%对应灰度值像素点数量增加一  
@@ -36,56 +34,11 @@ for i = 1:M
     for j = 1:N  
         img(i,j) = CumuPixel(img(i,j)+1);  
     end  
-end  
-figure,imshow(img,[]);
-count=0;
-I=im2double(img);
-%用鼠标获取生长点
-[y,x]=getpts;
-x=uint16(x);
-y=uint16(y);
-%区域生长
-tic;
-J = regiongrowing(I,x,y,52,i);
-toc;
-
-%形态学闭运算
-se1=strel('disk',6);
-J=imclose(J,se1);
-figure,imshow(J);
-%提取分割轮廓
-outline = bwperim(J);
-figure,imshow(outline,[]);
-%在原图中显示轮廓
-I(outline) = 255;
-
-figure,imshow(I,[]);
-%{
-%以下程序为将分割的算法和标准分割算法对比，计算面积重叠率
-%分割效果的检测均可以使用以下程序
-%——————————————————————————————
-img=load_nii('H:\毕业设计\肝脏肿瘤数据\TrainingSet\OX-03\Segmentation\001.nii');
-img=img.img;
-img=img(150:350,130:300);
-figure,imshow(img,[]);
-%循环函数为计算分割图像和标准图像面积重叠像素个数
-new=zeros(M,N);
-for i=1:M
-    for j=1:N
-        if img(i,j)==1 && J(i,j)==1
-            new(i,j)=1;
-        end
-    end
 end
-figure,imshow(new,[]);
-[r,c]=find(new==1);
-a=length(r)
-%标准图像的像素个数
-[r,c]=find(J==1);
-b=length(r);
-%算法分割图像的像素个数
-[r,c]=find(img==1);
-c=length(r);
-
-Dice=2*a/(b+c)
-%}
+figure,imshow(img,[]),title('灰度直方图均衡化处理');
+%调用phasecong2函数实现相位一致性处理
+[pc or ft] = phasecong2(img);
+figure,imshow(pc);  
+%实现非极大值抑制
+im=nonmaxsup(pc,or,1.5);
+figure,imshow(im,[]);
